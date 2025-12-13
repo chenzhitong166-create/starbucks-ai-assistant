@@ -208,29 +208,11 @@ chatInput.addEventListener("keydown", (e) => {
   }
 });
 
-// 页面加载时显示欢迎信息
-window.addEventListener("DOMContentLoaded", async () => {
-  try {
-    // 可选：发送一个测试请求检查连接
-    console.log("检查Webhook连接...");
-    const testRes = await fetch(WEBHOOK_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ input: "你好" })
-    });
-    
-    if (testRes.ok) {
-      console.log("Webhook连接正常");
-    } else {
-      console.warn("Webhook连接测试失败:", testRes.status);
-    }
-  } catch (e) {
-    console.warn("Webhook连接测试异常，可忽略:", e.message);
-  }
-  
-  // 聚焦输入框
+// 页面加载时只聚焦输入框，不调用后端
+window.addEventListener("DOMContentLoaded", () => {
   chatInput.focus();
 });
+    
 </script>
 </body>
 </html>
