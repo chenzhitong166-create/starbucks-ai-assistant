@@ -38,11 +38,14 @@ body { background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); min-height
 .footer { text-align:center; padding:25px; color:#666; font-size:14px; border-top:1px solid #eee; background:#f8f9fa; }
 .tech-badges { display:flex; justify-content:center; gap:10px; margin-top:15px; flex-wrap:wrap; }
 .badge { background:#e8f5e9; color:var(--starbucks-green); padding:6px 12px; border-radius:20px; font-size:12px; font-weight:500; }
-.user { color:var(--starbucks-green); margin:5px 0; }
-.assistant { color:#333; margin:5px 0; }
+.user { color:var(--starbucks-green); margin:5px 0; font-weight:600; }
+.assistant { color:#333; margin:5px 0; padding:10px; background:#f8f9fa; border-radius:8px; border-left:3px solid var(--starbucks-light-green); }
+.thinking { color:#666; font-style:italic; }
+.error { color:#d32f2f; background:#ffebee; padding:10px; border-radius:8px; border-left:3px solid #d32f2f; }
 @media (max-width:768px) {
     .features { grid-template-columns:1fr; padding:30px 20px; }
     .chat-box { height:300px; }
+    #chatInput { width:65%; }
 }
 </style>
 </head>
@@ -71,8 +74,10 @@ body { background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); min-height
   <!-- 聊天界面 -->
   <div class="chat-section">
     <div class="chat-header"><div style="font-size:32px;">💬</div><div class="chat-title">开始咨询</div></div>
-    <div class="chat-box" id="chatBox"></div>
-    <input type="text" id="chatInput" placeholder="输入你的问题..."/>
+    <div class="chat-box" id="chatBox">
+      <div class="assistant">您好！我是星巴克门店智能助手。请问有什么可以帮助您的？</div>
+    </div>
+    <input type="text" id="chatInput" placeholder="输入你的问题，例如：冰美式怎么做？"/>
     <button id="sendBtn">发送</button>
   </div>
 
@@ -97,32 +102,99 @@ const sendBtn = document.getElementById("sendBtn");
 const chatBox = document.getElementById("chatBox");
 
 // 显示消息函数
-function addMessage(text, sender) {
+function addMessage(text, sender, type = "normal") {
   const div = document.createElement("div");
-  div.textContent = (sender==="user"?"我: ":"AI: ") + text;
   div.className = sender;
+  
+  if (type === "thinking") {
+    div.className = "thinking";
+    div.textContent = "AI: 思考中...";
+  } else if (type === "error") {
+    div.className = "error";
+    div.textContent = "AI: " + text;
+  } else {
+    div.textContent = (sender === "user" ? "我: " : "AI: ") + text;
+  }
+  
   chatBox.appendChild(div);
   chatBox.scrollTop = chatBox.scrollHeight;
+  return div;
+}
+
+// 更新消息内容
+function updateMessage(element, text, sender = "assistant") {
+  element.className = sender;
+  element.textContent = (sender === "user" ? "我: " : "AI: ") + text;
 }
 
 // 发送消息函数
 async function sendMessage() {
   const text = chatInput.value.trim();
-  if(!text) return;
-  addMessage(text,"user");
-  chatInput.value="";
-
+  if (!text) return;
+  
+  // 显示用户消息
+  addMessage(text, "user");
+  chatInput.value = "";
+  chatInput.disabled = true;
+  sendBtn.disabled = true;
+  sendBtn.textContent = "发送中...";
+  
+  // 显示思考中状态
+  const thinkingMsg = addMessage("", "assistant", "thinking");
+  
   try {
-    const res = await fetch(WEBHOOK_URL,{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({message:text})
+    console.log("发送请求到:", WEBHOOK_URL);
+    console.log("发送内容:", { input: text });
+    
+    const res = await fetch(WEBHOOK_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ input: text })  // 关键：使用 input 字段
     });
-    const data = await res.json();
-    addMessage(data.reply || "未返回内容","assistant");
-  } catch(e) {
-    console.error(e);
-    addMessage("⚠️ 连接失败，请检查服务状态","assistant");
+    
+    console.log("响应状态码:", res.status);
+    
+    if (!res.ok) {
+      throw new Error(`HTTP错误 ${res.status}`);
+    }
+    
+    const responseText = await res.text();
+    console.log("原始响应文本:", responseText);
+    
+    let data;
+    try {
+      data = JSON.parse(responseText);
+      console.log("解析后的JSON数据:", data);
+    } catch (e) {
+      console.warn("响应不是JSON格式:", responseText);
+      // 如果不是JSON，直接使用文本
+      updateMessage(thinkingMsg, responseText, "assistant");
+      return;
+    }
+    
+    // 尝试多种可能的字段名
+    const answer = data.output || data.answer || data.reply || 
+                   data.response || data.result || data.text || 
+                   data.content || data.data;
+    
+    console.log("提取的答案:", answer);
+    
+    if (answer) {
+      updateMessage(thinkingMsg, answer, "assistant");
+    } else {
+      console.error("未找到有效字段，完整数据:", data);
+      updateMessage(thinkingMsg, "抱歉，我暂时无法回答这个问题。", "assistant");
+    }
+    
+  } catch (error) {
+    console.error("请求失败:", error);
+    updateMessage(thinkingMsg, `网络请求失败: ${error.message}`, "error");
+  } finally {
+    // 恢复UI状态
+    chatInput.disabled = false;
+    sendBtn.disabled = false;
+    sendBtn.textContent = "发送";
+    chatInput.focus();
   }
 }
 
@@ -130,19 +202,34 @@ async function sendMessage() {
 sendBtn.addEventListener("click", sendMessage);
 
 // 回车发送
-chatInput.addEventListener("keydown", (e)=>{ if(e.key==="Enter") sendMessage(); });
-
-// 页面加载唤醒 workflow
-window.addEventListener("DOMContentLoaded", async()=>{
-  try{
-    await fetch(WEBHOOK_URL,{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({message:"启动"})
-    });
-  }catch(e){
-    console.warn("首次唤醒 workflow 失败，可忽略", e);
+chatInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && !chatInput.disabled) {
+    sendMessage();
   }
+});
+
+// 页面加载时显示欢迎信息
+window.addEventListener("DOMContentLoaded", async () => {
+  try {
+    // 可选：发送一个测试请求检查连接
+    console.log("检查Webhook连接...");
+    const testRes = await fetch(WEBHOOK_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ input: "你好" })
+    });
+    
+    if (testRes.ok) {
+      console.log("Webhook连接正常");
+    } else {
+      console.warn("Webhook连接测试失败:", testRes.status);
+    }
+  } catch (e) {
+    console.warn("Webhook连接测试异常，可忽略:", e.message);
+  }
+  
+  // 聚焦输入框
+  chatInput.focus();
 });
 </script>
 </body>
