@@ -83,29 +83,33 @@ body { background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); min-height
 
   <!-- 底部 -->
   <div class="footer">
-    <p>星巴克门店智能助手演示系统 | 基于n8n + Google Gemini + Pinecone构建</p>
+    <p>星巴克门店智能助手演示系统 | 基于 n8n + DeepSeek + Gemini + Pinecone 构建</p>
     <div class="tech-badges">
-      <span class="badge">n8n工作流自动化</span>
-      <span class="badge">Google Gemini AI</span>
-      <span class="badge">Pinecone向量数据库</span>
-      <span class="badge">RAG检索增强</span>
-      <span class="badge">GitHub Pages部署</span>
+      <span class="badge">n8n 工作流自动化</span>
+      <span class="badge">DeepSeek 对话生成</span>
+      <span class="badge">Gemini Embedding 向量模型</span>
+      <span class="badge">Pinecone 向量数据库</span>
+      <span class="badge">RAG 检索增强</span>
+      <span class="badge">GitHub Pages 静态部署</span>
     </div>
     <p style="margin-top:15px; font-size:13px; color:#888;">这是一个技术演示项目，展示了AI在工作流程自动化和知识管理中的应用</p>
   </div>
 </div>
 
 <script>
+// ✅ 关键修改1：修正 URL 末尾空格！
 const WEBHOOK_URL = "https://chenzhitong.app.n8n.cloud/webhook/starbucks-ai-assistant";
+
 const chatInput = document.getElementById("chatInput");
 const sendBtn = document.getElementById("sendBtn");
 const chatBox = document.getElementById("chatBox");
 
+// ✅ 关键修改2：防重复提交锁
+let isProcessing = false;
+
 // 显示消息函数
 function addMessage(text, sender, type = "normal") {
   const div = document.createElement("div");
-  div.className = sender;
-  
   if (type === "thinking") {
     div.className = "thinking";
     div.textContent = "AI: 思考中...";
@@ -113,9 +117,9 @@ function addMessage(text, sender, type = "normal") {
     div.className = "error";
     div.textContent = "AI: " + text;
   } else {
+    div.className = sender;
     div.textContent = (sender === "user" ? "我: " : "AI: ") + text;
   }
-  
   chatBox.appendChild(div);
   chatBox.scrollTop = chatBox.scrollHeight;
   return div;
@@ -129,68 +133,55 @@ function updateMessage(element, text, sender = "assistant") {
 
 // 发送消息函数
 async function sendMessage() {
+  if (isProcessing) return; // 🔒 防止重复提交
+
   const text = chatInput.value.trim();
   if (!text) return;
-  
+
+  isProcessing = true;
+
   // 显示用户消息
   addMessage(text, "user");
   chatInput.value = "";
   chatInput.disabled = true;
   sendBtn.disabled = true;
-  sendBtn.textContent = "发送中...";
-  
+  sendBtn.textContent = "发送中…";
+
   // 显示思考中状态
   const thinkingMsg = addMessage("", "assistant", "thinking");
-  
+
   try {
-    console.log("发送请求到:", WEBHOOK_URL);
-    console.log("发送内容:", { input: text });
-    
     const res = await fetch(WEBHOOK_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ input: text })  // 关键：使用 input 字段
+      body: JSON.stringify({ input: text }) // 保持 input 字段兼容 n8n
     });
-    
-    console.log("响应状态码:", res.status);
-    
+
     if (!res.ok) {
-      throw new Error(`HTTP错误 ${res.status}`);
+      throw new Error(`HTTP ${res.status}`);
     }
-    
+
     const responseText = await res.text();
-    console.log("原始响应文本:", responseText);
-    
-    let data;
+    let answer;
+
     try {
-      data = JSON.parse(responseText);
-      console.log("解析后的JSON数据:", data);
+      const data = JSON.parse(responseText);
+      // 支持多种返回格式
+      answer = data.output || data.answer || data.reply ||
+               data.response || data.result || data.text ||
+               data.content || data.data || "";
     } catch (e) {
-      console.warn("响应不是JSON格式:", responseText);
-      // 如果不是JSON，直接使用文本
-      updateMessage(thinkingMsg, responseText, "assistant");
-      return;
+      // 非 JSON 响应直接当作文本
+      answer = responseText;
     }
-    
-    // 尝试多种可能的字段名
-    const answer = data.output || data.answer || data.reply || 
-                   data.response || data.result || data.text || 
-                   data.content || data.data;
-    
-    console.log("提取的答案:", answer);
-    
-    if (answer) {
-      updateMessage(thinkingMsg, answer, "assistant");
-    } else {
-      console.error("未找到有效字段，完整数据:", data);
-      updateMessage(thinkingMsg, "抱歉，我暂时无法回答这个问题。", "assistant");
-    }
-    
+
+    updateMessage(thinkingMsg, answer || "抱歉，我暂时无法回答这个问题。", "assistant");
+
   } catch (error) {
     console.error("请求失败:", error);
-    updateMessage(thinkingMsg, `网络请求失败: ${error.message}`, "error");
+    updateMessage(thinkingMsg, `请求失败：${error.message}`, "error");
   } finally {
-    // 恢复UI状态
+    isProcessing = false;
     chatInput.disabled = false;
     sendBtn.disabled = false;
     sendBtn.textContent = "发送";
@@ -198,21 +189,18 @@ async function sendMessage() {
   }
 }
 
-// 按钮点击发送
+// 绑定事件
 sendBtn.addEventListener("click", sendMessage);
-
-// 回车发送
 chatInput.addEventListener("keydown", (e) => {
   if (e.key === "Enter" && !chatInput.disabled) {
     sendMessage();
   }
 });
 
-// 页面加载时只聚焦输入框，不调用后端
+// 页面加载：仅聚焦输入框，✅ 0 API 调用！
 window.addEventListener("DOMContentLoaded", () => {
   chatInput.focus();
 });
-    
 </script>
 </body>
 </html>
