@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>星巴克门店智能助手 (Barista Copilot)</title>
+<!-- ✅ 引入 marked.js 库：让列表和加粗显示得像文档一样漂亮 -->
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <style>
     :root {
         --sb-green: #00704A;
@@ -111,7 +113,7 @@
 
     .message {
         max-width: 85%;
-        padding: 16px 20px;
+        padding: 12px 20px;
         border-radius: 18px;
         font-size: 15px;
         line-height: 1.6;
@@ -136,7 +138,6 @@
         margin-left: 15px; 
     }
     
-    /* 咖啡杯头像 */
     .message.bot::before {
         content: '☕'; 
         position: absolute;
@@ -154,10 +155,31 @@
         font-size: 18px;
     }
 
+    /* === Markdown 样式优化 (让列表不乱) === */
+    .message.bot p { margin: 0 0 10px 0; }
+    .message.bot p:last-child { margin-bottom: 0; }
+    
+    .message.bot strong {
+        color: var(--sb-green);
+        font-weight: 700;
+        background: rgba(0, 112, 74, 0.05);
+        padding: 0 4px;
+        border-radius: 4px;
+    }
+
+    .message.bot ul, .message.bot ol {
+        margin: 8px 0;
+        padding-left: 24px; /* 关键：给列表留出左边距 */
+    }
+
+    .message.bot li {
+        margin-bottom: 6px;
+    }
+
     /* 思考中动画 */
     .thinking-bubble {
         align-self: flex-start;
-        margin-left: 55px; /* 对齐文本 */
+        margin-left: 55px;
         background: white;
         padding: 10px 20px;
         border-radius: 25px;
@@ -169,8 +191,11 @@
         align-items: center;
         gap: 8px;
         box-shadow: 0 4px 15px rgba(203, 162, 88, 0.1);
+        opacity: 0; /* 初始隐藏，配合动画 */
+        animation: popIn 0.3s forwards;
     }
     
+    @keyframes popIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     .coffee-spin { animation: spin 2s linear infinite; display: inline-block; }
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
@@ -278,7 +303,6 @@
         .header { padding: 12px 15px; }
         .chat-box { padding: 20px; gap: 15px; }
 
-        /* 移动端头像防截断修复 */
         .message.bot { margin-left: 35px; }
         .message.bot::before { left: -40px; }
 
@@ -287,11 +311,6 @@
         .badge { font-size: 9px; padding: 3px 8px; }
         .input-area { padding: 10px 15px; }
     }
-    
-    /* Markdown 样式 */
-    .message.bot strong { color: var(--sb-green); font-weight: 700; background: rgba(0, 112, 74, 0.05); padding: 0 4px; border-radius: 4px;}
-    .message.bot ul { padding-left: 20px; margin: 8px 0; }
-    .message.bot li { margin-bottom: 4px; }
 
 </style>
 </head>
@@ -325,12 +344,11 @@
     <div class="footer-wrapper">
         <!-- 3. 输入区 -->
         <div class="input-area">
-            <!-- 修复点：移除了 HTML 里的 onkeypress 事件 -->
             <input type="text" id="chatInput" placeholder="拿铁怎么做？">
             <button onclick="sendMessage()" id="sendBtn">发送</button>
         </div>
 
-        <!-- 4. 技术选型 (精简版) -->
+        <!-- 4. 技术选型 -->
         <div class="tech-footer">
             <div class="tech-desc">本系统为技术演示 Demo，基于以下架构构建：</div>
             <div class="tech-badges">
@@ -344,7 +362,7 @@
 </div>
 
 <script>
-    // 🔥【重要】请在此处填入你的 n8n Webhook URL (确保是 Production URL)
+    // 🔥【重要】请在此处填入你的 n8n Webhook URL
     const WEBHOOK_URL = "https://chenzhitong.app.n8n.cloud/webhook/starbucks-ai-assistant";
 
     const chatBox = document.getElementById('chatBox');
@@ -352,18 +370,27 @@
     const sendBtn = document.getElementById('sendBtn');
     let isProcessing = false;
 
-    // ✅ 修复：使用 JS 监听器，完美解决 Mac/PC 回车报错问题
+    // ✅ 核心升级：会话ID管理 (Session ID)
+    // 逻辑：如果本地有ID就用，没有就生成新的。这样刷新页面ID不变，但清空缓存变。
+    let sessionId = localStorage.getItem('sb_session_id');
+    if (!sessionId) {
+        sessionId = 'sess_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        localStorage.setItem('sb_session_id', sessionId);
+    }
+    console.log("Current Session ID:", sessionId);
+
+    // 监听回车键 (修复 Mac 兼容性)
     inputEl.addEventListener('keypress', function (e) {
         if (e.key === 'Enter') {
-            e.preventDefault(); // 防止默认换行
+            e.preventDefault(); 
             sendMessage();
         }
     });
 
-    // 俏皮的思考文案
+    // 思考文案
     const thinkingSteps = [
-        "☕️ 小助手正在翻阅 SOP 手册...",
-        "🔍 正在检索 Pinecone 知识库...",
+        "☕️ 小助手正在翻阅手册...",
+        "🔍 正在检索 Pinecone...",
         "✨ 正在分析饮品配方...",
         "📝 正在整理回答..."
     ];
@@ -405,10 +432,14 @@
         const startTime = Date.now();
 
         try {
+            // ✅ 发送请求：带上 input 和 sessionId
             const response = await fetch(WEBHOOK_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ input: text }) 
+                body: JSON.stringify({ 
+                    input: text,
+                    sessionId: sessionId 
+                }) 
             });
 
             if (!response.ok) throw new Error('Network error');
@@ -427,7 +458,6 @@
             const thinkingEl = document.getElementById(thinkingId);
             if(thinkingEl) thinkingEl.remove();
 
-            // 计算耗时
             const endTime = Date.now();
             const duration = ((endTime - startTime) / 1000).toFixed(2);
 
@@ -436,8 +466,11 @@
             botMsgDiv.className = 'message bot';
             chatBox.appendChild(botMsgDiv);
 
-            // 流式输出
-            await typeWriter(botMsgDiv, aiResponseText);
+            // ✅ 使用 marked.js 渲染 Markdown (解决列表显示问题)
+            const htmlContent = marked.parse(aiResponseText);
+            
+            // 流式/淡入显示
+            await typeWriter(botMsgDiv, htmlContent);
 
             // 耗时统计
             const metaInfo = document.createElement('span');
@@ -472,23 +505,25 @@
         chatBox.scrollTop = chatBox.scrollHeight;
     }
 
-    function typeWriter(element, text) {
+    function typeWriter(element, htmlContent) {
         return new Promise(resolve => {
-            let formattedText = text
-                .replace(/\n/g, '<br>')
-                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                .replace(/- /g, '• ');
-
+            // 创建内容容器
             const contentSpan = document.createElement('div');
-            contentSpan.innerHTML = formattedText;
+            // ✅ 直接插入解析好的 HTML，确保格式正确
+            contentSpan.innerHTML = htmlContent;
+            
+            // 初始隐藏
             contentSpan.style.opacity = 0;
-            contentSpan.style.transition = 'opacity 0.4s';
+            contentSpan.style.transition = 'opacity 0.5s ease-in-out';
             element.appendChild(contentSpan);
             
+            // 触发淡入动画
             requestAnimationFrame(() => {
                 contentSpan.style.opacity = 1;
             });
-            setTimeout(resolve, 300); 
+
+            // 简单延迟 resolve，模拟打字完成
+            setTimeout(resolve, 600); 
         });
     }
 </script>
