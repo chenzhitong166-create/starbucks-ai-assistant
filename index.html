@@ -6,10 +6,12 @@
 <title>星巴克门店智能助手 (Barista Copilot)</title>
 <style>
     :root {
-        --sb-green: #00704A; /* 星巴克官方绿 */
-        --sb-dark: #1e3932;
-        --sb-accent: #d4e9e2;
-        --bg-color: #f1f8f6;
+        /* 星巴克品牌色系 */
+        --sb-green: #00704A;       /* 核心绿 */
+        --sb-dark: #1e3932;        /* 深绿背景 */
+        --sb-gold: #CBA258;        /* 星巴克金 (精致感来源) */
+        --sb-light: #f1f8f6;       /* 浅绿背景 */
+        --bg-color: #f7f7f7;       /* 网页背景 */
         --chat-bg: #ffffff;
     }
 
@@ -19,80 +21,109 @@
         background-color: var(--bg-color);
         height: 100vh;
         display: flex;
-        flex-direction: column;
         align-items: center;
         justify-content: center;
+        /* 增加一点纹理感 */
+        background-image: radial-gradient(#e0e0e0 1px, transparent 1px);
+        background-size: 20px 20px;
     }
 
     .main-container {
-        width: 100%;
-        max-width: 900px;
-        height: 90vh; /* 占据屏幕高度的90% */
+        /* 修改点1：扩大屏幕占用，更像一个完整APP */
+        width: 95%;
+        max-width: 1200px;
+        height: 95vh; 
         background: white;
-        border-radius: 20px;
-        box-shadow: 0 10px 40px rgba(0, 112, 74, 0.15);
+        border-radius: 16px;
+        box-shadow: 0 20px 60px rgba(0, 50, 30, 0.15);
         display: flex;
         flex-direction: column;
         overflow: hidden;
         border: 1px solid rgba(0, 112, 74, 0.1);
+        position: relative;
+    }
+
+    /* 顶部装饰条 (金色) */
+    .top-bar {
+        height: 6px;
+        background: linear-gradient(90deg, var(--sb-green) 0%, var(--sb-gold) 100%);
+        width: 100%;
     }
 
     /* === 头部区域 === */
     .header {
-        background-color: var(--sb-green);
-        color: white;
-        padding: 20px 30px;
+        background-color: white;
+        padding: 20px 40px;
         display: flex;
         align-items: center;
         gap: 15px;
+        border-bottom: 1px solid #f0f0f0;
         flex-shrink: 0;
     }
 
+    .logo-container {
+        position: relative;
+    }
+
     .logo-circle {
-        width: 45px;
-        height: 45px;
-        background: white;
+        width: 50px;
+        height: 50px;
+        background: var(--sb-green);
+        color: white;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 24px;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        font-size: 26px;
+        box-shadow: 0 4px 10px rgba(0, 112, 74, 0.2);
+        border: 2px solid var(--sb-gold); /* 金色边框 */
     }
 
     .header-info h1 {
-        font-size: 20px;
+        font-size: 22px;
         font-weight: 700;
+        color: var(--sb-dark);
         letter-spacing: 0.5px;
     }
 
     .header-info p {
-        font-size: 12px;
-        opacity: 0.8;
+        font-size: 13px;
+        color: #888;
         margin-top: 4px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    
+    .status-dot {
+        width: 8px;
+        height: 8px;
+        background-color: #4CAF50;
+        border-radius: 50%;
+        display: inline-block;
     }
 
     /* === 聊天区域 === */
     .chat-box {
         flex-grow: 1;
-        padding: 30px;
+        padding: 40px;
         overflow-y: auto;
         display: flex;
         flex-direction: column;
-        gap: 20px;
-        background: #fdfdfd;
+        gap: 24px;
+        background: var(--chat-bg);
         scroll-behavior: smooth;
     }
 
     .message {
         max-width: 80%;
-        padding: 15px 20px;
-        border-radius: 16px;
-        font-size: 15px;
+        padding: 18px 24px;
+        border-radius: 18px;
+        font-size: 16px;
         line-height: 1.6;
         position: relative;
         word-wrap: break-word;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        box-shadow: 0 2px 12px rgba(0,0,0,0.03);
     }
 
     .message.user {
@@ -104,102 +135,116 @@
 
     .message.bot {
         align-self: flex-start;
-        background-color: white;
+        background-color: #fcfcfc;
         color: #333;
         border: 1px solid #eee;
         border-bottom-left-radius: 4px;
     }
-
-    /* 思考中动画 */
-    .thinking-bubble {
-        align-self: flex-start;
-        background: white;
-        padding: 10px 20px;
-        border-radius: 20px;
-        border: 1px solid #eee;
-        color: #888;
-        font-size: 13px;
+    
+    /* 机器人头像装饰 */
+    .message.bot::before {
+        content: '🤖'; /* 这里也可以换成图片URL */
+        position: absolute;
+        left: -35px;
+        top: 0;
+        width: 28px;
+        height: 28px;
+        background: var(--sb-light);
+        border-radius: 50%;
         display: flex;
         align-items: center;
-        gap: 8px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+        justify-content: center;
+        font-size: 16px;
     }
-    .dots span {
+
+    /* 思考中动画 - 俏皮版 */
+    .thinking-bubble {
+        align-self: flex-start;
+        margin-left: 35px; /* 对齐头像 */
+        background: white;
+        padding: 12px 24px;
+        border-radius: 25px;
+        border: 1px solid var(--sb-gold); /* 金色边框体现思考 */
+        color: var(--sb-green);
+        font-size: 14px;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        box-shadow: 0 4px 15px rgba(203, 162, 88, 0.1);
+    }
+    
+    .coffee-spin {
+        animation: spin 2s linear infinite;
         display: inline-block;
-        width: 6px;
-        height: 6px;
-        background: #bbb;
-        border-radius: 50%;
-        animation: wave 1.3s linear infinite;
     }
-    .dots span:nth-child(2) { animation-delay: -1.1s; }
-    .dots span:nth-child(3) { animation-delay: -0.9s; }
-    @keyframes wave {
-        0%, 60%, 100% { transform: initial; }
-        30% { transform: translateY(-5px); }
-    }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
     /* 耗时统计 */
     .meta-info {
         display: block;
-        margin-top: 8px;
+        margin-top: 10px;
         font-size: 11px;
         color: #aaa;
         text-align: right;
-        font-style: italic;
+        font-family: monospace;
     }
 
-    /* === 底部输入区 === */
-    .input-area {
-        padding: 20px 30px;
-        background: white;
+    /* === 底部区域 === */
+    .footer-wrapper {
         border-top: 1px solid #f0f0f0;
+        background: #fafafa;
+    }
+
+    /* 输入区 */
+    .input-area {
+        padding: 20px 40px;
         display: flex;
         gap: 15px;
-        flex-shrink: 0;
     }
 
     input {
         flex-grow: 1;
-        padding: 12px 20px;
-        border: 2px solid #eee;
-        border-radius: 50px;
-        font-size: 15px;
+        padding: 15px 25px;
+        border: 2px solid #e0e0e0;
+        border-radius: 12px;
+        font-size: 16px;
         outline: none;
-        transition: border-color 0.3s;
+        transition: all 0.3s;
+        background: white;
     }
 
     input:focus {
         border-color: var(--sb-green);
+        box-shadow: 0 0 0 3px rgba(0, 112, 74, 0.1);
     }
 
     button {
         background-color: var(--sb-green);
         color: white;
         border: none;
-        padding: 0 25px;
-        border-radius: 50px;
+        padding: 0 35px;
+        border-radius: 12px;
         font-weight: 600;
+        font-size: 16px;
         cursor: pointer;
-        transition: background 0.2s;
-        flex-shrink: 0;
+        transition: background 0.2s, transform 0.1s;
     }
 
-    button:hover {
-        background-color: #005c3d;
+    button:hover { background-color: #005c3d; }
+    button:active { transform: scale(0.98); }
+    button:disabled { background-color: #ccc; cursor: not-allowed; }
+
+    /* 技术栈展示区 */
+    .tech-footer {
+        padding: 10px 40px 20px 40px;
+        text-align: center;
     }
     
-    button:disabled {
-        background-color: #ccc;
-        cursor: not-allowed;
-    }
-
-    /* === 底部技术栈 (给面试官看) === */
-    .footer {
-        text-align: center;
-        padding: 15px;
-        background: #fafafa;
-        border-top: 1px solid #eee;
+    .tech-desc {
+        font-size: 12px;
+        color: #888;
+        margin-bottom: 10px;
     }
 
     .tech-badges {
@@ -209,79 +254,90 @@
         flex-wrap: wrap;
     }
 
+    /* 修改点3：全绿色系徽章 */
     .badge {
         font-size: 11px;
-        color: #666;
-        background: #e9ecef;
-        padding: 4px 10px;
-        border-radius: 4px;
-        border: 1px solid #e0e0e0;
-        font-weight: 500;
+        color: var(--sb-green);
+        background: rgba(0, 112, 74, 0.08);
+        padding: 4px 12px;
+        border-radius: 6px;
+        border: 1px solid rgba(0, 112, 74, 0.15);
+        font-weight: 600;
     }
     
-    /* 重点高亮核心技术 */
-    .badge.highlight {
-        color: var(--sb-green);
-        background: var(--sb-accent);
-        border-color: var(--sb-accent);
-    }
+    /* Markdown 样式 */
+    .message.bot strong { color: var(--sb-green); font-weight: 700; background: rgba(0, 112, 74, 0.05); padding: 0 4px; border-radius: 4px;}
+    .message.bot ul { padding-left: 20px; margin: 10px 0; }
+    .message.bot li { margin-bottom: 6px; }
 
-    /* Markdown 简单样式 */
-    .message.bot strong { color: var(--sb-green); font-weight: 700; }
-    .message.bot ul { padding-left: 20px; margin: 8px 0; }
-    .message.bot li { margin-bottom: 4px; }
 </style>
 </head>
 <body>
 
 <div class="main-container">
+    <div class="top-bar"></div> <!-- 金色顶部条 -->
+
     <!-- 1. 头部 -->
     <div class="header">
-        <div class="logo-circle">☕</div>
+        <div class="logo-container">
+            <div class="logo-circle">☕</div>
+        </div>
         <div class="header-info">
             <h1>星巴克门店智能助手</h1>
-            <p>SOP 知识库 V2025.03 · 实时检索</p>
+            <p><span class="status-dot"></span> 在线 | AI Operation Copilot</p>
         </div>
     </div>
 
     <!-- 2. 聊天内容区 -->
     <div class="chat-box" id="chatBox">
-        <!-- 欢迎语 -->
+        <!-- 修改点5：欢迎语更新 -->
         <div class="message bot">
             <div>
                 嗨！伙伴 👋，我是你的值班 AI。<br>
-                <strong>配方查询</strong>、<strong>效期确认</strong>、<strong>清洁规范</strong>，请直接问我！
+                <strong>配方查询</strong>、<strong>清洁规范</strong>、<strong>服务指南</strong>，随时问我！
             </div>
         </div>
     </div>
 
-    <!-- 3. 底部输入区 -->
-    <div class="input-area">
-        <input type="text" id="chatInput" placeholder="输入问题，例如：下班前要做什么？" onkeypress="handleKeyPress(event)">
-        <button onclick="sendMessage()" id="sendBtn">发送</button>
-    </div>
+    <!-- 底部包裹层 -->
+    <div class="footer-wrapper">
+        <!-- 3. 输入区 -->
+        <div class="input-area">
+            <input type="text" id="chatInput" placeholder="输入问题，例如：大杯冰焦糖玛奇朵几泵糖？" onkeypress="handleKeyPress(event)">
+            <button onclick="sendMessage()" id="sendBtn">发送</button>
+        </div>
 
-    <!-- 4. 技术选型展示 (面试亮点) -->
-    <div class="footer">
-        <div class="tech-badges">
-            <span class="badge highlight">n8n Workflow</span>
-            <span class="badge highlight">DeepSeek V3</span>
-            <span class="badge highlight">Pinecone Vector</span>
-            <span class="badge">Gemini Embedding</span>
-            <span class="badge">RAG Architecture</span>
-            <span class="badge">Read/Write Split</span>
+        <!-- 4. 技术选型 (修改点3) -->
+        <div class="tech-footer">
+            <div class="tech-desc">本系统为技术演示 Demo，基于以下架构构建：</div>
+            <div class="tech-badges">
+                <span class="badge">n8n Workflow</span>
+                <span class="badge">DeepSeek V3</span>
+                <span class="badge">Pinecone Vector</span>
+                <span class="badge">Gemini Embedding</span>
+                <span class="badge">RAG Architecture</span>
+                <span class="badge">Read/Write Split</span>
+            </div>
         </div>
     </div>
 </div>
 
 <script>
-    // 🔥【请修改这里】替换为你的 n8n Webhook URL
+    // 🔥【请在此处填入你的 URL】
     const WEBHOOK_URL = "https://chenzhitong.app.n8n.cloud/webhook/starbucks-ai-assistant";
 
     const chatBox = document.getElementById('chatBox');
     const inputEl = document.getElementById('chatInput');
     const sendBtn = document.getElementById('sendBtn');
     let isProcessing = false;
+
+    // 修改点4：俏皮的思考文案
+    const thinkingSteps = [
+        "☕️ 小助手正在翻阅 SOP 手册...",
+        "🔍 正在检索 Pinecone 知识库...",
+        "✨ 正在分析饮品配方...",
+        "📝 正在整理回答..."
+    ];
 
     function handleKeyPress(e) {
         if (e.key === 'Enter') sendMessage();
@@ -300,55 +356,65 @@
         inputEl.disabled = true;
         sendBtn.disabled = true;
 
-        // 2. 显示思考中状态
+        // 2. 显示思考状态
         const thinkingId = 'thinking-' + Date.now();
         const thinkingHTML = `
             <div class="thinking-bubble" id="${thinkingId}">
-                <span>DeepSeek 思考中</span>
-                <div class="dots"><span></span><span></span><span></span></div>
+                <span class="coffee-spin">☕️</span>
+                <span id="thinking-text">${thinkingSteps[0]}</span>
             </div>
         `;
         chatBox.insertAdjacentHTML('beforeend', thinkingHTML);
         scrollToBottom();
 
+        // 启动文案轮播
+        let stepIndex = 1;
+        const intervalId = setInterval(() => {
+            const textEl = document.querySelector(`#${thinkingId} #thinking-text`);
+            if (textEl) {
+                textEl.innerText = thinkingSteps[stepIndex % thinkingSteps.length];
+                stepIndex++;
+            }
+        }, 1200);
+
         const startTime = Date.now();
 
         try {
-            // 3. 发起请求
             const response = await fetch(WEBHOOK_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ input: text }) // n8n 接收的字段名
+                body: JSON.stringify({ input: text }) 
             });
 
             if (!response.ok) throw new Error('Network error');
             
-            // 解析返回 (兼容多种格式)
             const responseText = await response.text();
             let aiResponseText = "";
             try {
                 const data = JSON.parse(responseText);
-                aiResponseText = data.output || data.text || data.answer || JSON.stringify(data);
+                aiResponseText = data.output || data.text || data.answer || data.content || JSON.stringify(data);
             } catch {
                 aiResponseText = responseText;
             }
 
-            // 4. 移除思考动画
-            document.getElementById(thinkingId).remove();
+            // 清理思考状态
+            clearInterval(intervalId);
+            const thinkingEl = document.getElementById(thinkingId);
+            if(thinkingEl) thinkingEl.remove();
 
-            // 5. 计算耗时
+            // 3. 计算耗时
             const endTime = Date.now();
             const duration = ((endTime - startTime) / 1000).toFixed(2);
 
-            // 6. 创建机器人消息容器
+            // 4. 机器人回复容器
             const botMsgDiv = document.createElement('div');
             botMsgDiv.className = 'message bot';
             chatBox.appendChild(botMsgDiv);
 
-            // 7. 执行打字机流式输出
+            // 5. 流式输出
             await typeWriter(botMsgDiv, aiResponseText);
 
-            // 8. 追加耗时统计
+            // 6. 耗时统计
             const metaInfo = document.createElement('span');
             metaInfo.className = 'meta-info';
             metaInfo.innerText = `⚡ 思考耗时: ${duration}s`;
@@ -357,8 +423,10 @@
             scrollToBottom();
 
         } catch (error) {
-            document.getElementById(thinkingId).remove();
-            addMessage(`❌ 请求失败: ${error.message}`, 'bot');
+            clearInterval(intervalId);
+            const thinkingEl = document.getElementById(thinkingId);
+            if(thinkingEl) thinkingEl.remove();
+            addMessage(`❌ 连接失败，请检查 n8n: ${error.message}`, 'bot');
         } finally {
             isProcessing = false;
             inputEl.disabled = false;
@@ -367,7 +435,6 @@
         }
     }
 
-    // 辅助函数：添加普通消息
     function addMessage(text, type) {
         const div = document.createElement('div');
         div.className = `message ${type}`;
@@ -376,40 +443,32 @@
         scrollToBottom();
     }
 
-    // 辅助函数：自动滚动到底部
     function scrollToBottom() {
         chatBox.scrollTop = chatBox.scrollHeight;
     }
 
-    // 核心函数：打字机效果 (模拟流式)
     function typeWriter(element, text) {
         return new Promise(resolve => {
-            // 简单处理 Markdown 换行和加粗
-            // 注意：正式生产环境建议使用 marked.js 库，这里为了单文件演示手写简单替换
             let formattedText = text
                 .replace(/\n/g, '<br>')
-                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>'); // 处理加粗
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/- /g, '• ');
 
+            // 创建内容容器
             const contentSpan = document.createElement('div');
+            contentSpan.innerHTML = formattedText; // 简单起见直接渲染，若要追求极致逐字效果需复杂逻辑
+            
+            // 添加淡入动画
+            contentSpan.style.opacity = 0;
+            contentSpan.style.transition = 'opacity 0.5s';
             element.appendChild(contentSpan);
+            
+            // 触发动画
+            requestAnimationFrame(() => {
+                contentSpan.style.opacity = 1;
+            });
 
-            let i = 0;
-            // 既然已经格式化了HTML，我们就不能逐字打印HTML标签了
-            // 这里为了演示效果，我们直接打印，但模拟延迟
-            // 如果追求完美逐字，需要解析HTML节点，这里简化处理：
-            // 直接放入HTML，但用 CSS 动画淡入，或者分段显示
-            
-            // 简易版打字机：每15毫秒显示一个字符（纯文本模式）
-            // 为了支持 HTML 格式，这里改为：直接显示，但为了模拟流式，我们可以分段
-            
-            // 【修正策略】为了保留格式，我们不拆分标签，而是直接显示
-            // 如果你想看逐字跳动的效果，可以使用以下逻辑：
-            
-            contentSpan.innerHTML = formattedText; 
-            // 如果需要视觉上的“流式”，通常配合后端 SSE。
-            // 这里前端模拟，直接显示其实体验最好，不会破坏 HTML 结构。
-            
-            resolve();
+            setTimeout(resolve, 500); 
         });
     }
 </script>
