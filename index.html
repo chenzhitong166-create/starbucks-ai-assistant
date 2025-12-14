@@ -2,20 +2,19 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>星巴克门店智能助手 (Barista Copilot)</title>
 <style>
     :root {
-        /* 星巴克品牌色系 */
-        --sb-green: #00704A;       /* 核心绿 */
-        --sb-dark: #1e3932;        /* 深绿背景 */
-        --sb-gold: #CBA258;        /* 星巴克金 (精致感来源) */
-        --sb-light: #f1f8f6;       /* 浅绿背景 */
-        --bg-color: #f7f7f7;       /* 网页背景 */
+        --sb-green: #00704A;
+        --sb-dark: #1e3932;
+        --sb-gold: #CBA258;
+        --sb-light: #f1f8f6;
+        --bg-color: #f7f7f7;
         --chat-bg: #ffffff;
     }
 
-    * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
     
     body {
         background-color: var(--bg-color);
@@ -23,13 +22,12 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        /* 增加一点纹理感 */
         background-image: radial-gradient(#e0e0e0 1px, transparent 1px);
         background-size: 20px 20px;
+        overflow: hidden; /* 防止页面整体滚动 */
     }
 
     .main-container {
-        /* 修改点1：扩大屏幕占用，更像一个完整APP */
         width: 95%;
         max-width: 1200px;
         height: 95vh; 
@@ -43,87 +41,83 @@
         position: relative;
     }
 
-    /* 顶部装饰条 (金色) */
     .top-bar {
         height: 6px;
         background: linear-gradient(90deg, var(--sb-green) 0%, var(--sb-gold) 100%);
         width: 100%;
+        flex-shrink: 0;
     }
 
-    /* === 头部区域 === */
+    /* === 头部 === */
     .header {
         background-color: white;
-        padding: 20px 40px;
+        padding: 15px 30px;
         display: flex;
         align-items: center;
-        gap: 15px;
+        gap: 12px;
         border-bottom: 1px solid #f0f0f0;
         flex-shrink: 0;
     }
 
-    .logo-container {
-        position: relative;
-    }
-
     .logo-circle {
-        width: 50px;
-        height: 50px;
+        width: 44px;
+        height: 44px;
         background: var(--sb-green);
         color: white;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 26px;
+        font-size: 22px;
         box-shadow: 0 4px 10px rgba(0, 112, 74, 0.2);
-        border: 2px solid var(--sb-gold); /* 金色边框 */
+        border: 2px solid var(--sb-gold);
     }
 
     .header-info h1 {
-        font-size: 22px;
+        font-size: 18px;
         font-weight: 700;
         color: var(--sb-dark);
-        letter-spacing: 0.5px;
     }
 
     .header-info p {
-        font-size: 13px;
+        font-size: 12px;
         color: #888;
-        margin-top: 4px;
+        margin-top: 2px;
         display: flex;
         align-items: center;
         gap: 5px;
     }
     
     .status-dot {
-        width: 8px;
-        height: 8px;
+        width: 6px;
+        height: 6px;
         background-color: #4CAF50;
         border-radius: 50%;
         display: inline-block;
     }
 
-    /* === 聊天区域 === */
+    /* === 聊天区 === */
     .chat-box {
         flex-grow: 1;
-        padding: 40px;
+        padding: 30px;
         overflow-y: auto;
         display: flex;
         flex-direction: column;
-        gap: 24px;
+        gap: 20px;
         background: var(--chat-bg);
         scroll-behavior: smooth;
+        -webkit-overflow-scrolling: touch; /* iOS 滚动优化 */
     }
 
     .message {
-        max-width: 80%;
-        padding: 18px 24px;
+        max-width: 85%;
+        padding: 16px 20px;
         border-radius: 18px;
-        font-size: 16px;
+        font-size: 15px;
         line-height: 1.6;
         position: relative;
         word-wrap: break-word;
-        box-shadow: 0 2px 12px rgba(0,0,0,0.03);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.03);
     }
 
     .message.user {
@@ -139,17 +133,20 @@
         color: #333;
         border: 1px solid #eee;
         border-bottom-left-radius: 4px;
+        margin-left: 10px; /* 给头像留位置 */
     }
     
-    /* 机器人头像装饰 */
+    /* 修改点1：精致的咖啡杯头像 */
     .message.bot::before {
-        content: '🤖'; /* 这里也可以换成图片URL */
+        content: '☕'; 
         position: absolute;
-        left: -35px;
+        left: -38px;
         top: 0;
-        width: 28px;
-        height: 28px;
-        background: var(--sb-light);
+        width: 30px;
+        height: 30px;
+        background: white;
+        border: 1px solid #eee;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
         border-radius: 50%;
         display: flex;
         align-items: center;
@@ -157,58 +154,55 @@
         font-size: 16px;
     }
 
-    /* 思考中动画 - 俏皮版 */
+    /* 思考中动画 */
     .thinking-bubble {
         align-self: flex-start;
-        margin-left: 35px; /* 对齐头像 */
+        margin-left: 45px;
         background: white;
-        padding: 12px 24px;
+        padding: 10px 20px;
         border-radius: 25px;
-        border: 1px solid var(--sb-gold); /* 金色边框体现思考 */
+        border: 1px solid var(--sb-gold);
         color: var(--sb-green);
-        font-size: 14px;
+        font-size: 13px;
         font-weight: 500;
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 8px;
         box-shadow: 0 4px 15px rgba(203, 162, 88, 0.1);
     }
     
-    .coffee-spin {
-        animation: spin 2s linear infinite;
-        display: inline-block;
-    }
+    .coffee-spin { animation: spin 2s linear infinite; display: inline-block; }
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-    /* 耗时统计 */
     .meta-info {
         display: block;
-        margin-top: 10px;
-        font-size: 11px;
+        margin-top: 8px;
+        font-size: 10px;
         color: #aaa;
         text-align: right;
         font-family: monospace;
     }
 
-    /* === 底部区域 === */
+    /* === 底部区域 (包含输入和技术栈) === */
     .footer-wrapper {
         border-top: 1px solid #f0f0f0;
         background: #fafafa;
+        flex-shrink: 0;
+        padding-bottom: env(safe-area-inset-bottom); /* 适配 iPhone 底部条 */
     }
 
-    /* 输入区 */
     .input-area {
-        padding: 20px 40px;
+        padding: 15px 30px;
         display: flex;
-        gap: 15px;
+        gap: 10px;
     }
 
     input {
         flex-grow: 1;
-        padding: 15px 25px;
-        border: 2px solid #e0e0e0;
-        border-radius: 12px;
-        font-size: 16px;
+        padding: 12px 20px;
+        border: 1px solid #ddd;
+        border-radius: 10px;
+        font-size: 15px;
         outline: none;
         transition: all 0.3s;
         background: white;
@@ -223,59 +217,106 @@
         background-color: var(--sb-green);
         color: white;
         border: none;
-        padding: 0 35px;
-        border-radius: 12px;
+        padding: 0 25px;
+        border-radius: 10px;
         font-weight: 600;
-        font-size: 16px;
+        font-size: 15px;
         cursor: pointer;
-        transition: background 0.2s, transform 0.1s;
+        transition: background 0.2s;
+        white-space: nowrap;
     }
-
+    
     button:hover { background-color: #005c3d; }
-    button:active { transform: scale(0.98); }
-    button:disabled { background-color: #ccc; cursor: not-allowed; }
+    button:disabled { background-color: #ccc; }
 
-    /* 技术栈展示区 */
+    /* 技术栈区域 */
     .tech-footer {
-        padding: 10px 40px 20px 40px;
+        padding: 5px 20px 15px 20px;
         text-align: center;
+        background: #fcfcfc;
     }
     
     .tech-desc {
-        font-size: 12px;
-        color: #888;
-        margin-bottom: 10px;
+        font-size: 11px;
+        color: #999;
+        margin-bottom: 8px;
     }
 
     .tech-badges {
         display: flex;
         justify-content: center;
-        gap: 8px;
+        gap: 6px;
         flex-wrap: wrap;
     }
 
-    /* 修改点3：全绿色系徽章 */
     .badge {
-        font-size: 11px;
+        font-size: 10px;
         color: var(--sb-green);
-        background: rgba(0, 112, 74, 0.08);
-        padding: 4px 12px;
-        border-radius: 6px;
-        border: 1px solid rgba(0, 112, 74, 0.15);
-        font-weight: 600;
+        background: rgba(0, 112, 74, 0.06);
+        padding: 3px 8px;
+        border-radius: 4px;
+        border: 1px solid rgba(0, 112, 74, 0.1);
+        font-weight: 500;
+    }
+
+    /* === 修改点2：移动端适配 (手机专用样式) === */
+    @media (max-width: 600px) {
+        body {
+            background-image: none;
+            background-color: white;
+        }
+
+        .main-container {
+            width: 100%;
+            height: 100%; /* 全屏 */
+            max-width: none;
+            border-radius: 0;
+            border: none;
+            box-shadow: none;
+        }
+
+        .header {
+            padding: 12px 20px;
+        }
+
+        .chat-box {
+            padding: 20px;
+            gap: 15px;
+        }
+
+        .message {
+            max-width: 90%;
+            padding: 14px 16px;
+            font-size: 14px;
+        }
+
+        /* 手机上隐藏技术描述文字，节省空间 */
+        .tech-desc {
+            display: none;
+        }
+
+        /* 徽章缩小间距，确保不占太多高度 */
+        .tech-footer {
+            padding: 8px 10px 12px 10px;
+        }
+        
+        .badge {
+            font-size: 9px;
+            padding: 2px 6px;
+        }
     }
     
     /* Markdown 样式 */
     .message.bot strong { color: var(--sb-green); font-weight: 700; background: rgba(0, 112, 74, 0.05); padding: 0 4px; border-radius: 4px;}
-    .message.bot ul { padding-left: 20px; margin: 10px 0; }
-    .message.bot li { margin-bottom: 6px; }
+    .message.bot ul { padding-left: 20px; margin: 8px 0; }
+    .message.bot li { margin-bottom: 4px; }
 
 </style>
 </head>
 <body>
 
 <div class="main-container">
-    <div class="top-bar"></div> <!-- 金色顶部条 -->
+    <div class="top-bar"></div>
 
     <!-- 1. 头部 -->
     <div class="header">
@@ -284,13 +325,12 @@
         </div>
         <div class="header-info">
             <h1>星巴克门店智能助手</h1>
-            <p><span class="status-dot"></span> 在线 | AI Operation Copilot</p>
+            <p><span class="status-dot"></span> 在线 | AI Copilot</p>
         </div>
     </div>
 
-    <!-- 2. 聊天内容区 -->
+    <!-- 2. 聊天区 -->
     <div class="chat-box" id="chatBox">
-        <!-- 修改点5：欢迎语更新 -->
         <div class="message bot">
             <div>
                 嗨！伙伴 👋，我是你的值班 AI。<br>
@@ -301,13 +341,13 @@
 
     <!-- 底部包裹层 -->
     <div class="footer-wrapper">
-        <!-- 3. 输入区 -->
+        <!-- 3. 输入区 (修改点3) -->
         <div class="input-area">
-            <input type="text" id="chatInput" placeholder="输入问题，例如：大杯冰焦糖玛奇朵几泵糖？" onkeypress="handleKeyPress(event)">
+            <input type="text" id="chatInput" placeholder="拿铁怎么做？" onkeypress="handleKeyPress(event)">
             <button onclick="sendMessage()" id="sendBtn">发送</button>
         </div>
 
-        <!-- 4. 技术选型 (修改点3) -->
+        <!-- 4. 技术选型 (修改点2：移动端自动优化) -->
         <div class="tech-footer">
             <div class="tech-desc">本系统为技术演示 Demo，基于以下架构构建：</div>
             <div class="tech-badges">
@@ -315,15 +355,14 @@
                 <span class="badge">DeepSeek V3</span>
                 <span class="badge">Pinecone Vector</span>
                 <span class="badge">Gemini Embedding</span>
-                <span class="badge">RAG Architecture</span>
-                <span class="badge">Read/Write Split</span>
+                <span class="badge">RAG</span>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-    // 🔥【请在此处填入你的 URL】
+    // 🔥【重要】请在此处填入你的 n8n Webhook URL
     const WEBHOOK_URL = "https://chenzhitong.app.n8n.cloud/webhook/starbucks-ai-assistant";
 
     const chatBox = document.getElementById('chatBox');
@@ -331,7 +370,7 @@
     const sendBtn = document.getElementById('sendBtn');
     let isProcessing = false;
 
-    // 修改点4：俏皮的思考文案
+    // 思考文案
     const thinkingSteps = [
         "☕️ 小助手正在翻阅 SOP 手册...",
         "🔍 正在检索 Pinecone 知识库...",
@@ -350,13 +389,13 @@
 
         isProcessing = true;
         
-        // 1. 上屏用户消息
+        // 上屏用户消息
         addMessage(text, 'user');
         inputEl.value = '';
         inputEl.disabled = true;
         sendBtn.disabled = true;
 
-        // 2. 显示思考状态
+        // 显示思考状态
         const thinkingId = 'thinking-' + Date.now();
         const thinkingHTML = `
             <div class="thinking-bubble" id="${thinkingId}">
@@ -366,112 +405,3 @@
         `;
         chatBox.insertAdjacentHTML('beforeend', thinkingHTML);
         scrollToBottom();
-
-        // 启动文案轮播
-        let stepIndex = 1;
-        const intervalId = setInterval(() => {
-            const textEl = document.querySelector(`#${thinkingId} #thinking-text`);
-            if (textEl) {
-                textEl.innerText = thinkingSteps[stepIndex % thinkingSteps.length];
-                stepIndex++;
-            }
-        }, 1200);
-
-        const startTime = Date.now();
-
-        try {
-            const response = await fetch(WEBHOOK_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ input: text }) 
-            });
-
-            if (!response.ok) throw new Error('Network error');
-            
-            const responseText = await response.text();
-            let aiResponseText = "";
-            try {
-                const data = JSON.parse(responseText);
-                aiResponseText = data.output || data.text || data.answer || data.content || JSON.stringify(data);
-            } catch {
-                aiResponseText = responseText;
-            }
-
-            // 清理思考状态
-            clearInterval(intervalId);
-            const thinkingEl = document.getElementById(thinkingId);
-            if(thinkingEl) thinkingEl.remove();
-
-            // 3. 计算耗时
-            const endTime = Date.now();
-            const duration = ((endTime - startTime) / 1000).toFixed(2);
-
-            // 4. 机器人回复容器
-            const botMsgDiv = document.createElement('div');
-            botMsgDiv.className = 'message bot';
-            chatBox.appendChild(botMsgDiv);
-
-            // 5. 流式输出
-            await typeWriter(botMsgDiv, aiResponseText);
-
-            // 6. 耗时统计
-            const metaInfo = document.createElement('span');
-            metaInfo.className = 'meta-info';
-            metaInfo.innerText = `⚡ 思考耗时: ${duration}s`;
-            botMsgDiv.appendChild(metaInfo);
-
-            scrollToBottom();
-
-        } catch (error) {
-            clearInterval(intervalId);
-            const thinkingEl = document.getElementById(thinkingId);
-            if(thinkingEl) thinkingEl.remove();
-            addMessage(`❌ 连接失败，请检查 n8n: ${error.message}`, 'bot');
-        } finally {
-            isProcessing = false;
-            inputEl.disabled = false;
-            sendBtn.disabled = false;
-            inputEl.focus();
-        }
-    }
-
-    function addMessage(text, type) {
-        const div = document.createElement('div');
-        div.className = `message ${type}`;
-        div.innerText = text;
-        chatBox.appendChild(div);
-        scrollToBottom();
-    }
-
-    function scrollToBottom() {
-        chatBox.scrollTop = chatBox.scrollHeight;
-    }
-
-    function typeWriter(element, text) {
-        return new Promise(resolve => {
-            let formattedText = text
-                .replace(/\n/g, '<br>')
-                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                .replace(/- /g, '• ');
-
-            // 创建内容容器
-            const contentSpan = document.createElement('div');
-            contentSpan.innerHTML = formattedText; // 简单起见直接渲染，若要追求极致逐字效果需复杂逻辑
-            
-            // 添加淡入动画
-            contentSpan.style.opacity = 0;
-            contentSpan.style.transition = 'opacity 0.5s';
-            element.appendChild(contentSpan);
-            
-            // 触发动画
-            requestAnimationFrame(() => {
-                contentSpan.style.opacity = 1;
-            });
-
-            setTimeout(resolve, 500); 
-        });
-    }
-</script>
-
-</body>
-</html>
