@@ -133,7 +133,6 @@
         color: #333;
         border: 1px solid #eee;
         border-bottom-left-radius: 4px;
-        /* 桌面端默认左边距，给头像留位置 */
         margin-left: 15px; 
     }
     
@@ -141,7 +140,6 @@
     .message.bot::before {
         content: '☕'; 
         position: absolute;
-        /* 图标定位 */
         left: -42px; 
         top: 0;
         width: 32px;
@@ -261,7 +259,7 @@
         font-weight: 500;
     }
 
-    /* === 移动端核心适配 === */
+    /* === 移动端适配 === */
     @media (max-width: 600px) {
         body {
             background-image: none;
@@ -277,41 +275,17 @@
             box-shadow: none;
         }
 
-        .header {
-            padding: 12px 15px;
-        }
+        .header { padding: 12px 15px; }
+        .chat-box { padding: 20px; gap: 15px; }
 
-        .chat-box {
-            padding: 15px; /* 减小内边距 */
-        }
+        /* 移动端头像防截断修复 */
+        .message.bot { margin-left: 35px; }
+        .message.bot::before { left: -40px; }
 
-        /* 修复：增加左侧 Margin，防止图标被切 */
-        .message.bot {
-            margin-left: 35px; /* 关键：把气泡往右推 */
-        }
-
-        /* 修复：调整图标位置，使其位于Margin区域内 */
-        .message.bot::before {
-            left: -40px; 
-        }
-
-        /* 隐藏技术描述，只留徽章 */
         .tech-desc { display: none; }
-
-        /* 徽章紧凑排列 */
-        .tech-badges {
-            gap: 6px;
-            padding-bottom: 5px;
-        }
-        
-        .badge {
-            font-size: 9px;
-            padding: 3px 8px;
-        }
-        
-        .input-area {
-            padding: 10px 15px;
-        }
+        .tech-badges { gap: 6px; padding-bottom: 5px; }
+        .badge { font-size: 9px; padding: 3px 8px; }
+        .input-area { padding: 10px 15px; }
     }
     
     /* Markdown 样式 */
@@ -351,11 +325,12 @@
     <div class="footer-wrapper">
         <!-- 3. 输入区 -->
         <div class="input-area">
-            <input type="text" id="chatInput" placeholder="拿铁怎么做？" onkeypress="handleKeyPress(event)">
+            <!-- 修复点：移除了 HTML 里的 onkeypress 事件 -->
+            <input type="text" id="chatInput" placeholder="拿铁怎么做？">
             <button onclick="sendMessage()" id="sendBtn">发送</button>
         </div>
 
-        <!-- 4. 技术选型 (已精简) -->
+        <!-- 4. 技术选型 (精简版) -->
         <div class="tech-footer">
             <div class="tech-desc">本系统为技术演示 Demo，基于以下架构构建：</div>
             <div class="tech-badges">
@@ -369,7 +344,7 @@
 </div>
 
 <script>
-    // 🔥【重要】请在此处填入你的 n8n Webhook URL
+    // 🔥【重要】请在此处填入你的 n8n Webhook URL (确保是 Production URL)
     const WEBHOOK_URL = "https://chenzhitong.app.n8n.cloud/webhook/starbucks-ai-assistant";
 
     const chatBox = document.getElementById('chatBox');
@@ -377,17 +352,21 @@
     const sendBtn = document.getElementById('sendBtn');
     let isProcessing = false;
 
+    // ✅ 修复：使用 JS 监听器，完美解决 Mac/PC 回车报错问题
+    inputEl.addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+            e.preventDefault(); // 防止默认换行
+            sendMessage();
+        }
+    });
+
     // 俏皮的思考文案
     const thinkingSteps = [
-        "☕️ 小助手正在翻阅手册...",
-        "🔍 正在检索 Pinecone...",
+        "☕️ 小助手正在翻阅 SOP 手册...",
+        "🔍 正在检索 Pinecone 知识库...",
         "✨ 正在分析饮品配方...",
         "📝 正在整理回答..."
     ];
-
-    function handleKeyPress(e) {
-        if (e.key === 'Enter') sendMessage();
-    }
 
     async function sendMessage() {
         if (isProcessing) return;
@@ -443,19 +422,24 @@
                 aiResponseText = responseText;
             }
 
+            // 停止思考
             clearInterval(intervalId);
             const thinkingEl = document.getElementById(thinkingId);
             if(thinkingEl) thinkingEl.remove();
 
+            // 计算耗时
             const endTime = Date.now();
             const duration = ((endTime - startTime) / 1000).toFixed(2);
 
+            // 机器人回复容器
             const botMsgDiv = document.createElement('div');
             botMsgDiv.className = 'message bot';
             chatBox.appendChild(botMsgDiv);
 
+            // 流式输出
             await typeWriter(botMsgDiv, aiResponseText);
 
+            // 耗时统计
             const metaInfo = document.createElement('span');
             metaInfo.className = 'meta-info';
             metaInfo.innerText = `⚡ 思考耗时: ${duration}s`;
